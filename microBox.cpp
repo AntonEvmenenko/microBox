@@ -73,7 +73,7 @@ void microBox::ShowPrompt()
     SerialPrint(machName);
     SerialPrint(":");
     SerialPrint(currentDir);
-    SerialPrint(">");
+    SerialPrint("> ");
 }
 
 uint8_t microBox::ParseCmdParams(char* pParam)
