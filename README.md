@@ -1,26 +1,14 @@
-# microBox
+Simplified and generalized version of the [**microBox** by wastel7.](https://github.com/wastel7/microBox)
 
-microBox is an Arduino library that provides a interface with Linux Shell like look and feel for Arduino applications.
-With microBox own commands and application parameters are made accessible to the user within a virtual Linux filesystem tree.
-The parameters can easily be accessed by Linux standard commands.
+# Description
+
+microBox is an library that provides a command line interface with Linux Shell like look and feel.
 
 ## Features
 
-* Linux Shell look and feel on Arduino
+* Linux Shell look and feel
 * Command history
-* esp8266 support (https://github.com/wastel7/microBoxEsp)
-* Telnet support
 * Autocompletion(Tab)
-* Virtual filesystem tree
-* Enables access to application-parameters
 * User commands
-* EEProm support for saving parameters
-* Login with password
-* Standard Linux commands
 * Int, Double and String datatypes supported for parameters
-* watch command with csv output
-
-## Documentation
-
-For more info visit http://sebastian-duell.de/en/microbox/index.html
-
+* Could be ported to any platform (you need to add the description for your platform to the `platform` folder)
