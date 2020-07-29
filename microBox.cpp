@@ -6,6 +6,7 @@
 */
 
 #include <microBox.h>
+#include <microBox_platform.h>
 
 microBox microbox;
 
@@ -68,7 +69,7 @@ bool microBox::isTimeout(unsigned long* lastTime, unsigned long intervall)
 {
     unsigned long m;
 
-    m = millis();
+    m = milliseconds();
     if (((m - *lastTime) >= intervall) || (*lastTime > m)) {
         *lastTime = m;
         return true;
@@ -78,11 +79,11 @@ bool microBox::isTimeout(unsigned long* lastTime, unsigned long intervall)
 
 void microBox::ShowPrompt()
 {
-    Serial.print(F("root@"));
-    Serial.print(machName);
-    Serial.print(F(":"));
-    Serial.print(currentDir);
-    Serial.print(F(">"));
+    SerialPrint("root@");
+    SerialPrint(machName);
+    SerialPrint(":");
+    SerialPrint(currentDir);
+    SerialPrint(">");
 }
 
 uint8_t microBox::ParseCmdParams(char* pParam)
@@ -104,7 +105,7 @@ uint8_t microBox::ParseCmdParams(char* pParam)
 void microBox::ExecCommand()
 {
     bool found = false;
-    Serial.println();
+    SerialPrint("\n\r");
     if (bufPos > 0) {
         uint8_t i = 0;
         uint8_t dstlen;
@@ -136,7 +137,7 @@ void microBox::ExecCommand()
         }
         if (!found) {
             bufPos = 0;
-            ErrorDir(F("/bin/sh"));
+            ErrorCmd();
             ShowPrompt();
         }
     } else
@@ -145,9 +146,9 @@ void microBox::ExecCommand()
 
 void microBox::cmdParser()
 {
-    while (Serial.available()) {
+    while (SerialAvailable()) {
         uint8_t ch;
-        ch = Serial.read();
+        ch = SerialRead();
 
         if (HandleEscSeq(ch))
             continue;
@@ -156,17 +157,17 @@ void microBox::cmdParser()
             if (bufPos > 0) {
                 bufPos--;
                 cmdBuf[bufPos] = 0;
-                Serial.write(ch);
-                Serial.print(F(" \x1B[1D"));
+                SerialWrite(ch);
+                SerialPrint(" \x1B[1D");
             } else {
-                Serial.print(F("\a"));
+                SerialPrint("\a");
             }
         } else if (ch == '\t') {
             HandleTab();
         } else if (ch != '\r' && bufPos < (MAX_CMD_BUF_SIZE - 1)) {
             if (ch != '\n') {
                 if (locEcho)
-                    Serial.write(ch);
+                    SerialWrite(ch);
                 cmdBuf[bufPos++] = ch;
                 cmdBuf[bufPos] = 0;
             }
@@ -278,7 +279,7 @@ void microBox::HandleTab()
         }
     }
     if (len > 0) {
-        Serial.print(pParam + inlen);
+        SerialPrint(pParam + inlen);
     }
 }
 
@@ -322,10 +323,10 @@ void microBox::HistoryPrintHlpr()
 
     len = strlen(cmdBuf);
     for (i = 0; i < bufPos; i++)
-        Serial.print('\b');
-    Serial.print(cmdBuf);
+        SerialPrint("\b");
+    SerialPrint(cmdBuf);
     if (len < bufPos) {
-        Serial.print(F("\x1B[K"));
+        SerialPrint("\x1B[K");
     }
     bufPos = len;
 }
@@ -350,10 +351,9 @@ void microBox::AddToHistory(char* buf)
     }
 }
 
-void microBox::ErrorDir(const __FlashStringHelper* cmd)
+void microBox::ErrorCmd()
 {
-    Serial.print(cmd);
-    Serial.println(F(": File or directory not found\n"));
+    SerialPrint("Command not found.\n\r");
 }
 
 // Taken from Stream.cpp

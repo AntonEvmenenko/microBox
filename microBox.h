@@ -8,8 +8,8 @@
 #ifndef _BASHCMD_H_
 #define _BASHCMD_H_
 
-#define __PROG_TYPES_COMPAT__
-#include <Arduino.h>
+#include <stdint.h>
+#include <string.h>
 
 #define MAX_CMD_NUM 20
 
@@ -59,7 +59,7 @@ private:
 private:
     void ShowPrompt();
     uint8_t ParseCmdParams(char* pParam);
-    void ErrorDir(const __FlashStringHelper* cmd);
+    void ErrorCmd();
     int8_t GetCmdIdx(char* pCmd, int8_t startIdx = 0);
     uint8_t ParCmp(uint8_t idx1, uint8_t idx2, bool cmd = false);
     void HandleTab();
