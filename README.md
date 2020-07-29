@@ -1,6 +1,6 @@
 Simplified and generalized version of the [**microBox** by wastel7.](https://github.com/wastel7/microBox)
 
-# Description
+## Description
 
 microBox is an library that provides a command line interface with Linux Shell like look and feel.
 
