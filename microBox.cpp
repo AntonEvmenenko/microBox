@@ -6,29 +6,30 @@
 */
 
 #include <microBox.h>
-#include <avr/pgmspace.h>
-#include <avr/eeprom.h>
+// #include <avr/pgmspace.h>
+// #include <avr/eeprom.h>
 
 microBox microbox;
-const prog_char fileDate[] PROGMEM = __DATE__;
+// const prog_char fileDate[] PROGMEM = __DATE__;
 
 CMD_ENTRY microBox::Cmds[] =
 {
-    {"cat", microBox::CatCB},
-    {"cd", microBox::ChangeDirCB},
-    {"echo", microBox::EchoCB},
-    {"loadpar", microBox::LoadParCB},
-    {"ll", microBox::ListLongCB},
-    {"ls", microBox::ListDirCB},
-    {"savepar", microBox::SaveParCB},
-    {"watch", microBox::watchCB},
-    {"watchcsv", microBox::watchcsvCB},
+    // {"cat", microBox::CatCB},
+    // {"cd", microBox::ChangeDirCB},
+    // {"echo", microBox::EchoCB},
+    // {"loadpar", microBox::LoadParCB},
+    // {"ll", microBox::ListLongCB},
+    // {"ls", microBox::ListDirCB},
+    // {"savepar", microBox::SaveParCB},
+    // {"watch", microBox::watchCB},
+    // {"watchcsv", microBox::watchcsvCB},
     {NULL, NULL}
 };
 
 const char microBox::dirList[][5] PROGMEM =
 {
-    "bin", "dev", "etc", "proc", "sbin", "var", "lib", "sys", "tmp", "usr", ""
+    // "bin", "dev", "etc", "proc", "sbin", "var", "lib", "sys", "tmp", "usr", 
+    ""
 };
 
 microBox::microBox()
@@ -198,11 +199,11 @@ void microBox::cmdParser()
     {
         uint8_t ch;
         ch = Serial.read();
-        if(ch == TELNET_IAC || stateTelnet != TELNET_STATE_NORMAL)
-        {
-            handleTelnet(ch);
-            continue;
-        }
+        // if(ch == TELNET_IAC || stateTelnet != TELNET_STATE_NORMAL)
+        // {
+        //     handleTelnet(ch);
+        //     continue;
+        // }
 
         if(HandleEscSeq(ch))
             continue;
@@ -479,80 +480,80 @@ void microBox::AddToHistory(char *buf)
 }
 
 // 2 telnet methods derived from https://github.com/nekromant/esp8266-frankenstein/blob/master/src/telnet.c
-void microBox::sendTelnetOpt(uint8_t option, uint8_t value)
-{
-    uint8_t tmp[4];
-    tmp[0] = TELNET_IAC;
-    tmp[1] = option;
-    tmp[2] = value;
-    tmp[3] = 0;
-    Serial.write(tmp, 4);
-}
+// void microBox::sendTelnetOpt(uint8_t option, uint8_t value)
+// {
+//     uint8_t tmp[4];
+//     tmp[0] = TELNET_IAC;
+//     tmp[1] = option;
+//     tmp[2] = value;
+//     tmp[3] = 0;
+//     Serial.write(tmp, 4);
+// }
 
-void microBox::handleTelnet(uint8_t ch)
-{
-    switch (stateTelnet)
-    {
-    case TELNET_STATE_IAC:
-        if(ch == TELNET_IAC)
-        {
-            stateTelnet = TELNET_STATE_NORMAL;
-        }
-        else
-        {
-            switch(ch)
-            {
-            case TELNET_WILL:
-                stateTelnet = TELNET_STATE_WILL;
-                break;
-            case TELNET_WONT:
-                stateTelnet = TELNET_STATE_WONT;
-                break;
-            case TELNET_DO:
-                stateTelnet = TELNET_STATE_DO;
-                break;
-            case TELNET_DONT:
-                stateTelnet = TELNET_STATE_DONT;
-                break;
-            default:
-                stateTelnet = TELNET_STATE_NORMAL;
-                break;
-            }
-        }
-        break;
-    case TELNET_STATE_WILL:
-        sendTelnetOpt(TELNET_DONT, ch);
-        stateTelnet = TELNET_STATE_NORMAL;
-        break;
-    case TELNET_STATE_WONT:
-        sendTelnetOpt(TELNET_DONT, ch);
-        stateTelnet = TELNET_STATE_NORMAL;
-        break;
-    case TELNET_STATE_DO:
-        if(ch == TELNET_OPTION_ECHO)
-        {
-            sendTelnetOpt(TELNET_WILL, ch);
-            sendTelnetOpt(TELNET_DO, ch);
-            locEcho = true;
-        }
-        else if(ch == TELNET_OPTION_SGA)
-            sendTelnetOpt(TELNET_WILL, ch);
-        else
-            sendTelnetOpt(TELNET_WONT, ch);
-        stateTelnet = TELNET_STATE_NORMAL;
-        break;
-    case TELNET_STATE_DONT:
-        sendTelnetOpt(TELNET_WONT, ch);
-        stateTelnet = TELNET_STATE_NORMAL;
-        break;
-    case TELNET_STATE_NORMAL:
-        if(ch == TELNET_IAC)
-        {
-            stateTelnet = TELNET_STATE_IAC;
-        }
-        break;
-    }
-}
+// void microBox::handleTelnet(uint8_t ch)
+// {
+//     switch (stateTelnet)
+//     {
+//     case TELNET_STATE_IAC:
+//         if(ch == TELNET_IAC)
+//         {
+//             stateTelnet = TELNET_STATE_NORMAL;
+//         }
+//         else
+//         {
+//             switch(ch)
+//             {
+//             case TELNET_WILL:
+//                 stateTelnet = TELNET_STATE_WILL;
+//                 break;
+//             case TELNET_WONT:
+//                 stateTelnet = TELNET_STATE_WONT;
+//                 break;
+//             case TELNET_DO:
+//                 stateTelnet = TELNET_STATE_DO;
+//                 break;
+//             case TELNET_DONT:
+//                 stateTelnet = TELNET_STATE_DONT;
+//                 break;
+//             default:
+//                 stateTelnet = TELNET_STATE_NORMAL;
+//                 break;
+//             }
+//         }
+//         break;
+//     case TELNET_STATE_WILL:
+//         sendTelnetOpt(TELNET_DONT, ch);
+//         stateTelnet = TELNET_STATE_NORMAL;
+//         break;
+//     case TELNET_STATE_WONT:
+//         sendTelnetOpt(TELNET_DONT, ch);
+//         stateTelnet = TELNET_STATE_NORMAL;
+//         break;
+//     case TELNET_STATE_DO:
+//         if(ch == TELNET_OPTION_ECHO)
+//         {
+//             sendTelnetOpt(TELNET_WILL, ch);
+//             sendTelnetOpt(TELNET_DO, ch);
+//             locEcho = true;
+//         }
+//         else if(ch == TELNET_OPTION_SGA)
+//             sendTelnetOpt(TELNET_WILL, ch);
+//         else
+//             sendTelnetOpt(TELNET_WONT, ch);
+//         stateTelnet = TELNET_STATE_NORMAL;
+//         break;
+//     case TELNET_STATE_DONT:
+//         sendTelnetOpt(TELNET_WONT, ch);
+//         stateTelnet = TELNET_STATE_NORMAL;
+//         break;
+//     case TELNET_STATE_NORMAL:
+//         if(ch == TELNET_IAC)
+//         {
+//             stateTelnet = TELNET_STATE_IAC;
+//         }
+//         break;
+//     }
+// }
 
 
 void microBox::ErrorDir(const __FlashStringHelper *cmd)
@@ -643,118 +644,118 @@ char *microBox::GetFile(char *pParam)
     return file;
 }
 
-void microBox::ListDirHlp(bool dir, bool rw, int len)
-{
-    cmdBuf[1] = 'r';
-    cmdBuf[3] = 0;
-    if(dir)
-        cmdBuf[0] = 'd';
-    else
-        cmdBuf[0] = '-';
+// void microBox::ListDirHlp(bool dir, bool rw, int len)
+// {
+//     cmdBuf[1] = 'r';
+//     cmdBuf[3] = 0;
+//     if(dir)
+//         cmdBuf[0] = 'd';
+//     else
+//         cmdBuf[0] = '-';
 
-    if(rw)
-        cmdBuf[2] = 'w';
-    else
-        cmdBuf[2] = '-';
+//     if(rw)
+//         cmdBuf[2] = 'w';
+//     else
+//         cmdBuf[2] = '-';
 
-    Serial.print(cmdBuf);
-    cmdBuf[0] = 0;
+//     Serial.print(cmdBuf);
+//     cmdBuf[0] = 0;
 
-    Serial.print(F("xr-xr-x\t2 root\troot\t"));
-    Serial.print(len);
-    Serial.print(F(" "));
-    Serial.print((const __FlashStringHelper*)fileDate);
-    Serial.print(F(" "));
-}
+//     Serial.print(F("xr-xr-x\t2 root\troot\t"));
+//     Serial.print(len);
+//     Serial.print(F(" "));
+//     Serial.print((const __FlashStringHelper*)fileDate);
+//     Serial.print(F(" "));
+// }
 
-void microBox::ListDir(char **pParam, uint8_t parCnt, bool listLong)
-{
-    uint8_t i=0;
-    char *dir;
+// void microBox::ListDir(char **pParam, uint8_t parCnt, bool listLong)
+// {
+//     uint8_t i=0;
+//     char *dir;
 
-    if(parCnt != 0)
-    {
-        dir = GetDir(pParam[0], false);
-        if(dir == NULL)
-        {
-            if(listLong)
-                ErrorDir(F("ll"));
-            else
-                ErrorDir(F("ls"));
-            return;
-        }
-    }
-    else
-    {
-        dir = currentDir;
-    }
+//     if(parCnt != 0)
+//     {
+//         dir = GetDir(pParam[0], false);
+//         if(dir == NULL)
+//         {
+//             if(listLong)
+//                 ErrorDir(F("ll"));
+//             else
+//                 ErrorDir(F("ls"));
+//             return;
+//         }
+//     }
+//     else
+//     {
+//         dir = currentDir;
+//     }
 
-    if(dir[1] == 0)
-    {
-        while(pgm_read_byte_near(&dirList[i][0]) != 0)
-        {
-            if(listLong)
-            {
-                ListDirHlp(true);
-            }
-            Serial.print((__FlashStringHelper*)dirList[i]);
-            if(listLong)
-                Serial.println();
-            else
-                Serial.print(F("\t"));
-            i++;
-        }
-        Serial.println();
-    }
-    else if(strcmp_P(dir, PSTR("/bin")) == 0)
-    {
-        while(Cmds[i].cmdName != NULL)
-        {
-            if(listLong)
-            {
-                ListDirHlp(false);
-            }
-            Serial.println(Cmds[i].cmdName);
-            i++;
-        }
-    }
-    else if(strcmp_P(dir, PSTR("/dev")) == 0)
-    {
-        while(Params[i].paramName != NULL)
-        {
-            if(listLong)
-            {
-                uint8_t size;
-                if(Params[i].parType&PARTYPE_INT)
-                    size=sizeof(int);
-                else if(Params[i].parType&PARTYPE_DOUBLE)
-                    size = sizeof(double);
-                else
-                    size = Params[i].len;
+//     if(dir[1] == 0)
+//     {
+//         while(pgm_read_byte_near(&dirList[i][0]) != 0)
+//         {
+//             if(listLong)
+//             {
+//                 ListDirHlp(true);
+//             }
+//             Serial.print((__FlashStringHelper*)dirList[i]);
+//             if(listLong)
+//                 Serial.println();
+//             else
+//                 Serial.print(F("\t"));
+//             i++;
+//         }
+//         Serial.println();
+//     }
+//     else if(strcmp_P(dir, PSTR("/bin")) == 0)
+//     {
+//         while(Cmds[i].cmdName != NULL)
+//         {
+//             if(listLong)
+//             {
+//                 ListDirHlp(false);
+//             }
+//             Serial.println(Cmds[i].cmdName);
+//             i++;
+//         }
+//     }
+//     else if(strcmp_P(dir, PSTR("/dev")) == 0)
+//     {
+//         while(Params[i].paramName != NULL)
+//         {
+//             if(listLong)
+//             {
+//                 uint8_t size;
+//                 if(Params[i].parType&PARTYPE_INT)
+//                     size=sizeof(int);
+//                 else if(Params[i].parType&PARTYPE_DOUBLE)
+//                     size = sizeof(double);
+//                 else
+//                     size = Params[i].len;
 
-                ListDirHlp(false, Params[i].parType&PARTYPE_RW, size);
-            }
-            Serial.println(Params[i].paramName);
-            i++;
-        }
-    }
-}
+//                 ListDirHlp(false, Params[i].parType&PARTYPE_RW, size);
+//             }
+//             Serial.println(Params[i].paramName);
+//             i++;
+//         }
+//     }
+// }
 
-void microBox::ChangeDir(char **pParam, uint8_t parCnt)
-{
-    char *dir;
+// void microBox::ChangeDir(char **pParam, uint8_t parCnt)
+// {
+//     char *dir;
 
-    if(pParam[0] != NULL)
-    {
-        dir = GetDir(pParam[0], false);
-        if(dir != NULL)
-        {
-            strcpy(currentDir, dir);
-            return;
-        }
-    }
-    ErrorDir(F("cd"));
-}
+//     if(pParam[0] != NULL)
+//     {
+//         dir = GetDir(pParam[0], false);
+//         if(dir != NULL)
+//         {
+//             strcpy(currentDir, dir);
+//             return;
+//         }
+//     }
+//     ErrorDir(F("cd"));
+// }
 
 void microBox::PrintParam(uint8_t idx)
 {
@@ -820,8 +821,8 @@ int8_t microBox::GetParamIdx(char* pParam, bool partStr, int8_t startIdx)
 // Taken from Stream.cpp
 double microBox::parseFloat(char *pBuf)
 {
-    boolean isNegative = false;
-    boolean isFraction = false;
+    bool isNegative = false;
+    bool isFraction = false;
     long value = 0;
     unsigned char c;
     double fraction = 1.0;
@@ -855,62 +856,62 @@ double microBox::parseFloat(char *pBuf)
 }
 
 // echo 82.00 > /dev/param
-void microBox::Echo(char **pParam, uint8_t parCnt)
-{
-    uint8_t idx;
+// void microBox::Echo(char **pParam, uint8_t parCnt)
+// {
+//     uint8_t idx;
 
-    if((parCnt == 3) && (strcmp_P(pParam[1], PSTR(">")) == 0))
-    {
-        idx = GetParamIdx(pParam[2]);
-        if(idx != -1)
-        {
-            if(Params[idx].parType & PARTYPE_RW)
-            {
-                if(Params[idx].parType & PARTYPE_INT)
-                {
-                    int val;
+//     if((parCnt == 3) && (strcmp_P(pParam[1], PSTR(">")) == 0))
+//     {
+//         idx = GetParamIdx(pParam[2]);
+//         if(idx != -1)
+//         {
+//             if(Params[idx].parType & PARTYPE_RW)
+//             {
+//                 if(Params[idx].parType & PARTYPE_INT)
+//                 {
+//                     int val;
 
-                    val = atoi(pParam[0]);
-                    *((int*)Params[idx].pParam) = val;
-                }
-                else if(Params[idx].parType & PARTYPE_DOUBLE)
-                {
-                    double val;
+//                     val = atoi(pParam[0]);
+//                     *((int*)Params[idx].pParam) = val;
+//                 }
+//                 else if(Params[idx].parType & PARTYPE_DOUBLE)
+//                 {
+//                     double val;
 
-                    val = parseFloat(pParam[0]);
-                    *((double*)Params[idx].pParam) = val;
-                }
-                else
-                {
-                    if(strlen(pParam[0]) < Params[idx].len)
-                        strcpy((char*)Params[idx].pParam, pParam[0]);
-                }
-                if(Params[idx].setFunc != NULL)
-                    (*Params[idx].setFunc)(Params[idx].id);
-            }
-            else
-                Serial.println(F("echo: File readonly"));
-        }
-        else
-        {
-            ErrorDir(F("echo"));
-        }
-    }
-    else
-    {
-        for(idx=0;idx<parCnt;idx++)
-        {
-            Serial.print(pParam[idx]);
-            Serial.print(F(" "));
-        }
-        Serial.println();
-    }
-}
+//                     val = parseFloat(pParam[0]);
+//                     *((double*)Params[idx].pParam) = val;
+//                 }
+//                 else
+//                 {
+//                     if(strlen(pParam[0]) < Params[idx].len)
+//                         strcpy((char*)Params[idx].pParam, pParam[0]);
+//                 }
+//                 if(Params[idx].setFunc != NULL)
+//                     (*Params[idx].setFunc)(Params[idx].id);
+//             }
+//             else
+//                 Serial.println(F("echo: File readonly"));
+//         }
+//         else
+//         {
+//             ErrorDir(F("echo"));
+//         }
+//     }
+//     else
+//     {
+//         for(idx=0;idx<parCnt;idx++)
+//         {
+//             Serial.print(pParam[idx]);
+//             Serial.print(F(" "));
+//         }
+//         Serial.println();
+//     }
+// }
 
-void microBox::Cat(char** pParam, uint8_t parCnt)
-{
-    Cat_int(pParam[0]);
-}
+// void microBox::Cat(char** pParam, uint8_t parCnt)
+// {
+//     Cat_int(pParam[0]);
+// }
 
 uint8_t microBox::Cat_int(char* pParam)
 {
@@ -928,94 +929,94 @@ uint8_t microBox::Cat_int(char* pParam)
     return 0;
 }
 
-void microBox::watch(char** pParam, uint8_t parCnt)
-{
-    if(parCnt == 2)
-    {
-        if(strncmp_P(pParam[0], PSTR("cat"), 3) == 0)
-        {
-            if(Cat_int(pParam[1]))
-            {
-                strcpy(cmdBuf, pParam[1]);
-                watchMode = true;
-            }
-        }
-    }
-}
+// void microBox::watch(char** pParam, uint8_t parCnt)
+// {
+//     if(parCnt == 2)
+//     {
+//         if(strncmp_P(pParam[0], PSTR("cat"), 3) == 0)
+//         {
+//             if(Cat_int(pParam[1]))
+//             {
+//                 strcpy(cmdBuf, pParam[1]);
+//                 watchMode = true;
+//             }
+//         }
+//     }
+// }
 
-void microBox::watchcsv(char** pParam, uint8_t parCnt)
-{
-    watch(pParam, parCnt);
-    if(watchMode)
-        csvMode = true;
-}
+// void microBox::watchcsv(char** pParam, uint8_t parCnt)
+// {
+//     watch(pParam, parCnt);
+//     if(watchMode)
+//         csvMode = true;
+// }
 
-void microBox::ReadWriteParamEE(bool write)
-{
-    uint8_t i=0;
-    uint8_t psize;
-    int pos=0;
+// void microBox::ReadWriteParamEE(bool write)
+// {
+//     uint8_t i=0;
+//     uint8_t psize;
+//     int pos=0;
 
-    while(Params[i].paramName != NULL)
-    {
-        if(Params[i].parType&PARTYPE_INT)
-            psize = sizeof(uint16_t);
-        else if(Params[i].parType&PARTYPE_DOUBLE)
-            psize = sizeof(double);
-        else
-            psize = Params[i].len;
+//     while(Params[i].paramName != NULL)
+//     {
+//         if(Params[i].parType&PARTYPE_INT)
+//             psize = sizeof(uint16_t);
+//         else if(Params[i].parType&PARTYPE_DOUBLE)
+//             psize = sizeof(double);
+//         else
+//             psize = Params[i].len;
 
-        if(write)
-            eeprom_write_block(Params[i].pParam, (void*)pos, psize);
-        else
-            eeprom_read_block(Params[i].pParam, (void*)pos, psize);
-        pos += psize;
-        i++;
-    }
-}
+//         if(write)
+//             eeprom_write_block(Params[i].pParam, (void*)pos, psize);
+//         else
+//             eeprom_read_block(Params[i].pParam, (void*)pos, psize);
+//         pos += psize;
+//         i++;
+//     }
+// }
 
-void microBox::ListDirCB(char **pParam, uint8_t parCnt)
-{
-    microbox.ListDir(pParam, parCnt);
-}
+// void microBox::ListDirCB(char **pParam, uint8_t parCnt)
+// {
+//     microbox.ListDir(pParam, parCnt);
+// }
 
-void microBox::ListLongCB(char **pParam, uint8_t parCnt)
-{
-    microbox.ListDir(pParam, parCnt, true);
-}
+// void microBox::ListLongCB(char **pParam, uint8_t parCnt)
+// {
+//     microbox.ListDir(pParam, parCnt, true);
+// }
 
-void microBox::ChangeDirCB(char **pParam, uint8_t parCnt)
-{
-    microbox.ChangeDir(pParam, parCnt);
-}
+// void microBox::ChangeDirCB(char **pParam, uint8_t parCnt)
+// {
+//     microbox.ChangeDir(pParam, parCnt);
+// }
 
-void microBox::EchoCB(char **pParam, uint8_t parCnt)
-{
-    microbox.Echo(pParam, parCnt);
-}
+// void microBox::EchoCB(char **pParam, uint8_t parCnt)
+// {
+//     microbox.Echo(pParam, parCnt);
+// }
 
-void microBox::CatCB(char** pParam, uint8_t parCnt)
-{
-    microbox.Cat(pParam, parCnt);
-}
+// void microBox::CatCB(char** pParam, uint8_t parCnt)
+// {
+//     microbox.Cat(pParam, parCnt);
+// }
 
-void microBox::watchCB(char** pParam, uint8_t parCnt)
-{
-    microbox.watch(pParam, parCnt);
-}
+// void microBox::watchCB(char** pParam, uint8_t parCnt)
+// {
+//     microbox.watch(pParam, parCnt);
+// }
 
-void microBox::watchcsvCB(char** pParam, uint8_t parCnt)
-{
-    microbox.watchcsv(pParam, parCnt);
-}
+// void microBox::watchcsvCB(char** pParam, uint8_t parCnt)
+// {
+//     microbox.watchcsv(pParam, parCnt);
+// }
 
-void microBox::LoadParCB(char **pParam, uint8_t parCnt)
-{
-    microbox.ReadWriteParamEE(false);
-}
+// void microBox::LoadParCB(char **pParam, uint8_t parCnt)
+// {
+//     microbox.ReadWriteParamEE(false);
+// }
 
-void microBox::SaveParCB(char **pParam, uint8_t parCnt)
-{
-    microbox.ReadWriteParamEE(true);
-}
+// void microBox::SaveParCB(char **pParam, uint8_t parCnt)
+// {
+//     microbox.ReadWriteParamEE(true);
+// }
 
