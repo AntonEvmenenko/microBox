@@ -67,18 +67,6 @@ bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uin
     return false;
 }
 
-bool microBox::isTimeout(unsigned long* lastTime, unsigned long intervall)
-{
-    unsigned long m;
-
-    m = milliseconds();
-    if (((m - *lastTime) >= intervall) || (*lastTime > m)) {
-        *lastTime = m;
-        return true;
-    }
-    return false;
-}
-
 void microBox::ShowPrompt()
 {
     SerialPrint("root@");

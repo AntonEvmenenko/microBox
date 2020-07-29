@@ -51,7 +51,6 @@ public:
     ~microBox();
     void begin(const char* hostName, bool localEcho = true, PARAM_ENTRY* pParams = NULL);
     void cmdParser();
-    bool isTimeout(unsigned long* lastTime, unsigned long intervall);
     bool AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc);
 
 private:

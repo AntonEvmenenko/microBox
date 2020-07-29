@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-unsigned long milliseconds();
 void SerialPrint(const char* s);
 size_t SerialWrite(uint8_t c);
 int SerialRead();

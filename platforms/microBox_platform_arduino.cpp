@@ -2,11 +2,6 @@
 
 #include <Arduino.h>
 
-unsigned long milliseconds()
-{
-    return millis();
-}
-
 void SerialPrint(const char* s)
 {
     Serial.print(s);
