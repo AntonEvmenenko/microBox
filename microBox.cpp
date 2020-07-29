@@ -15,6 +15,8 @@ CMD_ENTRY microBox::Cmds[] = {
     { NULL, NULL, NULL }
 };
 
+char microBox::historyBuf[MAX_HISTORY_BUFFER_SIZE];
+
 microBox::microBox()
 {
     bufPos = 0;
@@ -31,14 +33,11 @@ microBox::~microBox()
 {
 }
 
-void microBox::begin(PARAM_ENTRY* pParams, const char* hostName, bool localEcho, char* histBuf, int historySize)
+void microBox::begin(const char* hostName, bool localEcho, PARAM_ENTRY* pParams)
 {
-    historyBuf = histBuf;
-    if (historyBuf != NULL && historySize != 0) {
-        historyBufSize = historySize;
-        historyBuf[0] = 0;
-        historyBuf[1] = 0;
-    }
+    historyBufSize = MAX_HISTORY_BUFFER_SIZE;
+    historyBuf[0] = 0;
+    historyBuf[1] = 0;
 
     locEcho = localEcho;
     Params = pParams;

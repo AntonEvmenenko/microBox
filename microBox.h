@@ -12,6 +12,7 @@
 #include <string.h>
 
 #define MAX_CMD_NUM 20
+#define MAX_HISTORY_BUFFER_SIZE 1000
 
 #define MAX_CMD_BUF_SIZE 40
 #define MAX_PATH_LEN 10
@@ -48,7 +49,7 @@ class microBox {
 public:
     microBox();
     ~microBox();
-    void begin(PARAM_ENTRY* pParams, const char* hostName, bool localEcho = true, char* histBuf = NULL, int historySize = 0);
+    void begin(const char* hostName, bool localEcho = true, PARAM_ENTRY* pParams = NULL);
     void cmdParser();
     bool isTimeout(unsigned long* lastTime, unsigned long intervall);
     bool AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc);
@@ -84,13 +85,14 @@ private:
     unsigned long watchTimeout;
     const char* machName;
     int historyBufSize;
-    char* historyBuf;
     int historyWrPos;
     int historyCursorPos;
     bool locEcho;
 
     static CMD_ENTRY Cmds[MAX_CMD_NUM];
     PARAM_ENTRY* Params;
+
+    static char historyBuf[MAX_HISTORY_BUFFER_SIZE];
 };
 
 extern microBox microbox;
