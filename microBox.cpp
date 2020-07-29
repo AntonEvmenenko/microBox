@@ -11,7 +11,8 @@
 microBox microbox;
 
 CMD_ENTRY microBox::Cmds[] = {
-    { NULL, NULL }
+    { "help", "Prints help.\n\r", microBox::showHelp},
+    { NULL, NULL, NULL }
 };
 
 microBox::microBox()
@@ -47,7 +48,7 @@ void microBox::begin(PARAM_ENTRY* pParams, const char* hostName, bool localEcho,
     ShowPrompt();
 }
 
-bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt))
+bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc)
 {
     uint8_t idx = 0;
 
@@ -56,10 +57,12 @@ bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uin
     }
     if (idx < (MAX_CMD_NUM - 1)) {
         Cmds[idx].cmdName = cmdName;
+        Cmds[idx].cmdDesc = cmdDesc;
         Cmds[idx].cmdFunc = cmdFunc;
         idx++;
-        Cmds[idx].cmdFunc = NULL;
         Cmds[idx].cmdName = NULL;
+        Cmds[idx].cmdDesc = NULL;
+        Cmds[idx].cmdFunc = NULL;
         return true;
     }
     return false;
@@ -353,7 +356,7 @@ void microBox::AddToHistory(char* buf)
 
 void microBox::ErrorCmd()
 {
-    SerialPrint("Command not found.\n\r");
+    SerialPrint("Command not found. Use \"help\" or \"help <cmd>\" for details.\n\r");
 }
 
 // Taken from Stream.cpp
@@ -390,4 +393,39 @@ double microBox::parseFloat(char* pBuf)
         return value * fraction;
     else
         return value;
+}
+
+void microBox::showHelp(char** pParam, uint8_t parCnt)
+{
+    if (parCnt == 0) {
+        SerialPrint("List of available commands:\n\r");
+        SerialPrint("\n\r");
+        PrintCommands();
+        SerialPrint("\n\r");
+        SerialPrint("To get detailed information about <cmd>, type \"help <cmd>\".\n\r");
+    } else {
+        char* cmdName = pParam[0];
+        uint8_t i = 0;
+        while (Cmds[i].cmdName != NULL) {
+            if (!strcmp(Cmds[i].cmdName, cmdName)) {
+                SerialPrint(Cmds[i].cmdDesc);
+                return;
+            }
+            ++i;
+        }
+
+        SerialPrint("ERROR: Command ");
+        SerialPrint(cmdName);
+        SerialPrint(" not found.\n\r");
+    }
+}
+
+void microBox::PrintCommands()
+{
+    uint8_t index = 0;
+    while (Cmds[index].cmdName != NULL) {
+        SerialPrint(Cmds[index].cmdName);
+        SerialPrint("\n\r");
+        index++;
+    }
 }

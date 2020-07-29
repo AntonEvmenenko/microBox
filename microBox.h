@@ -29,6 +29,7 @@
 typedef struct
 {
     const char* cmdName;
+    const char *cmdDesc;
     void (*cmdFunc)(char** param, uint8_t parCnt);
 } CMD_ENTRY;
 
@@ -50,11 +51,11 @@ public:
     void begin(PARAM_ENTRY* pParams, const char* hostName, bool localEcho = true, char* histBuf = NULL, int historySize = 0);
     void cmdParser();
     bool isTimeout(unsigned long* lastTime, unsigned long intervall);
-    bool AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt));
+    bool AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc);
 
 private:
-    static void watchCB(char** pParam, uint8_t parCnt);
-    static void watchcsvCB(char** pParam, uint8_t parCnt);
+    static void showHelp(char** pParam, uint8_t parCnt);
+    static void PrintCommands();
 
 private:
     void ShowPrompt();
