@@ -1,3 +1,5 @@
+/*
+
 #ifdef ARDUINO
 
 #include <Arduino.h>
@@ -23,3 +25,5 @@ int SerialAvailable()
 }
 
 #endif
+
+*/

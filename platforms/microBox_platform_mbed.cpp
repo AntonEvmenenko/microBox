@@ -1,3 +1,5 @@
+/*
+
 #ifdef MBED
 
 #include <mbed.h>
@@ -27,3 +29,5 @@ int SerialAvailable()
 }
 
 #endif
+
+*/
