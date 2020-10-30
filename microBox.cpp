@@ -5,8 +5,8 @@
   Released under GPLv3.
 */
 
-#include <microBox.h>
-#include <microBox_platform.h>
+#include "microBox.h"
+#include "microBox_platform.h"
 
 microBox microbox;
 
