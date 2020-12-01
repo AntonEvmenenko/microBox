@@ -15,7 +15,6 @@
 #define MAX_HISTORY_BUFFER_SIZE 1000
 
 #define MAX_CMD_BUF_SIZE 40
-#define MAX_PATH_LEN 10
 
 #define PARTYPE_INT 0x01
 #define PARTYPE_DOUBLE 0x02
@@ -73,8 +72,6 @@ private:
     bool HandleEscSeq(unsigned char ch);
 
 private:
-    char currentDir[MAX_PATH_LEN];
-
     char cmdBuf[MAX_CMD_BUF_SIZE];
     char dirBuf[15];
     char* ParmPtr[10];

@@ -43,7 +43,6 @@ void microBox::begin(const char* hostName, bool localEcho, PARAM_ENTRY* pParams)
     Params = pParams;
     machName = hostName;
     ParmPtr[0] = NULL;
-    strcpy(currentDir, "/");
     ShowPrompt();
 }
 
@@ -69,10 +68,7 @@ bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uin
 
 void microBox::ShowPrompt()
 {
-    SerialPrint("root@");
     SerialPrint(machName);
-    SerialPrint(":");
-    SerialPrint(currentDir);
     SerialPrint("> ");
 }
 
