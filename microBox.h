@@ -48,16 +48,16 @@ class microBox {
 public:
     microBox();
     ~microBox();
-    void begin(const char* hostName, bool localEcho = true, PARAM_ENTRY* pParams = NULL);
+    void begin(const char* hostName, bool showPrompt = true, bool localEcho = true, PARAM_ENTRY* pParams = NULL);
     void cmdParser();
     bool AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc);
+    void ShowPrompt();
 
 private:
     static void showHelp(char** pParam, uint8_t parCnt);
     static void PrintCommands();
 
 private:
-    void ShowPrompt();
     uint8_t ParseCmdParams(char* pParam);
     void ErrorCmd();
     int8_t GetCmdIdx(char* pCmd, int8_t startIdx = 0);

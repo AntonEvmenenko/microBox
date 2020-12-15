@@ -33,7 +33,7 @@ microBox::~microBox()
 {
 }
 
-void microBox::begin(const char* hostName, bool localEcho, PARAM_ENTRY* pParams)
+void microBox::begin(const char* hostName, bool showPrompt, bool localEcho, PARAM_ENTRY* pParams)
 {
     historyBufSize = MAX_HISTORY_BUFFER_SIZE;
     historyBuf[0] = 0;
@@ -43,7 +43,9 @@ void microBox::begin(const char* hostName, bool localEcho, PARAM_ENTRY* pParams)
     Params = pParams;
     machName = hostName;
     ParmPtr[0] = NULL;
-    ShowPrompt();
+    if (showPrompt) {
+        ShowPrompt();
+    }
 }
 
 bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc)
