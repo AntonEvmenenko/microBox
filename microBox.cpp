@@ -57,7 +57,7 @@ void MicroBox::printf(const char* format, ...)
 
 void MicroBox::showPrompt()
 {
-    printf("%s>", hostName);
+    printf("%s> ", hostName);
 }
 
 uint8_t MicroBox::parseCommandParameters(char* pParam)
