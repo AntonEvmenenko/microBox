@@ -1,66 +1,39 @@
-/*
-  microBox.cpp - Library for Linux-Shell like interface for Arduino.
-  Created by Sebastian Duell, 06.02.2015.
-  More info under http://sebastian-duell.de
-  Released under GPLv3.
-*/
-
 #include "microBox.h"
 
 #include "port_handler.h"
 #include <printf/printf.h>
 #undef printf
 
-MicroBox::MicroBox()
-{
-    bufPos = 0;
-    locEcho = false;
-    watchTimeout = 0;
-    escSeq = 0;
-    historyWrPos = 0;
-    historyBufSize = 0;
-    historyCursorPos = -1;
-}
-
-MicroBox::~MicroBox()
-{
-}
-
-void MicroBox::begin(const char* hostName, PortHandler* portHandler, bool showPrompt, bool localEcho, PARAM_ENTRY* pParams)
+void MicroBox::begin(const char* hostName, PortHandler* portHandler, bool showPrompt, bool localEcho)
 {
     this->portHandler = portHandler;
+    this->localEcho = localEcho;
+    this->hostName = hostName;
 
-    Cmds[0].cmdName = "help";
-    Cmds[0].cmdDesc = "Prints help.\n\r";
-    Cmds[0].cmdFunc = std::bind(&MicroBox::showHelp, this, std::placeholders::_1, std::placeholders::_2);
-
-    historyBufSize = MAX_HISTORY_BUFFER_SIZE;
-
-    locEcho = localEcho;
-    Params = pParams;
-    machName = hostName;
-    ParmPtr[0] = NULL;
+    commands[0].commandName = "help";
+    commands[0].commandDescription = "Prints help.\n\r";
+    commands[0].commandFunction = std::bind(&MicroBox::showHelp, this, std::placeholders::_1, std::placeholders::_2);
 
     if (showPrompt) {
-        ShowPrompt();
+        this->showPrompt();
     }
 }
 
-bool MicroBox::AddCommand(const char* cmdName, callback_t cmdFunc, const char* cmdDesc)
+bool MicroBox::addCommand(const char* commandName, callback_t commandFunction, const char* commandDescription)
 {
-    uint8_t idx = 0;
+    uint8_t index = 0;
 
-    while ((Cmds[idx].cmdFunc != NULL) && (idx < (MAX_CMD_NUM - 1))) {
-        idx++;
+    while ((commands[index].commandFunction != nullptr) && (index < (MAX_COMMAND_NUMBER - 1))) {
+        index++;
     }
-    if (idx < (MAX_CMD_NUM - 1)) {
-        Cmds[idx].cmdName = cmdName;
-        Cmds[idx].cmdDesc = cmdDesc;
-        Cmds[idx].cmdFunc = cmdFunc;
-        idx++;
-        Cmds[idx].cmdName = NULL;
-        Cmds[idx].cmdDesc = NULL;
-        Cmds[idx].cmdFunc = NULL;
+    if (index < (MAX_COMMAND_NUMBER - 1)) {
+        commands[index].commandName = commandName;
+        commands[index].commandDescription = commandDescription;
+        commands[index].commandFunction = commandFunction;
+        index++;
+        commands[index].commandName = nullptr;
+        commands[index].commandDescription = nullptr;
+        commands[index].commandFunction = nullptr;
         return true;
     }
     return false;
@@ -69,7 +42,7 @@ bool MicroBox::AddCommand(const char* cmdName, callback_t cmdFunc, const char* c
 // from https://playground.arduino.cc/Main/Printf/
 void MicroBox::printf(const char* format, ...)
 {
-    char buf[PRINTF_BUF];
+    char buf[PRINTF_BUFFER_SIZE];
     va_list ap;
     va_start(ap, format);
     vsnprintf(buf, sizeof(buf), format, ap);
@@ -82,147 +55,139 @@ void MicroBox::printf(const char* format, ...)
     va_end(ap);
 }
 
-void MicroBox::ShowPrompt()
+void MicroBox::showPrompt()
 {
-    printf("%s>", machName);
+    printf("%s>", hostName);
 }
 
-uint8_t MicroBox::ParseCmdParams(char* pParam)
+uint8_t MicroBox::parseCommandParameters(char* pParam)
 {
-    uint8_t idx = 0;
+    uint8_t index = 0;
 
-    ParmPtr[idx] = pParam;
-    if (pParam != NULL) {
-        idx++;
-        while ((pParam = strchr(pParam, ' ')) != NULL) {
+    parameterPointer[index] = pParam;
+    if (pParam != nullptr) {
+        index++;
+        while ((pParam = strchr(pParam, ' ')) != nullptr) {
             pParam[0] = 0;
             pParam++;
-            ParmPtr[idx++] = pParam;
+            parameterPointer[index++] = pParam;
         }
     }
-    return idx;
+    return index;
 }
 
-void MicroBox::ExecCommand()
+void MicroBox::executeCommand()
 {
     bool found = false;
     printf("\n\r");
-    if (bufPos > 0) {
+    if (bufferPosition > 0) {
         uint8_t i = 0;
         uint8_t dstlen;
         uint8_t srclen;
         char* pParam;
 
-        cmdBuf[bufPos] = 0;
-        pParam = strchr(cmdBuf, ' ');
-        if (pParam != NULL) {
+        commandBuffer[bufferPosition] = 0;
+        pParam = strchr(commandBuffer, ' ');
+        if (pParam != nullptr) {
             pParam++;
-            srclen = pParam - cmdBuf - 1;
+            srclen = pParam - commandBuffer - 1;
         } else
-            srclen = bufPos;
+            srclen = bufferPosition;
 
-        AddToHistory(cmdBuf);
-        historyCursorPos = -1;
+        addToHistory(commandBuffer);
+        historyCursorPosition = -1;
 
-        while (Cmds[i].cmdName != NULL && found == false) {
-            dstlen = strlen(Cmds[i].cmdName);
+        while (commands[i].commandName != nullptr && found == false) {
+            dstlen = strlen(commands[i].commandName);
             if (dstlen == srclen) {
-                if (strncmp(cmdBuf, Cmds[i].cmdName, dstlen) == 0) {
-                    (Cmds[i].cmdFunc)(ParmPtr, ParseCmdParams(pParam));
+                if (strncmp(commandBuffer, commands[i].commandName, dstlen) == 0) {
+                    (commands[i].commandFunction)(parameterPointer, parseCommandParameters(pParam));
                     found = true;
-                    bufPos = 0;
-                    ShowPrompt();
+                    bufferPosition = 0;
+                    showPrompt();
                 }
             }
             i++;
         }
         if (!found) {
-            bufPos = 0;
-            ErrorCmd();
-            ShowPrompt();
+            bufferPosition = 0;
+            errorCommand();
+            showPrompt();
         }
     } else
-        ShowPrompt();
+        showPrompt();
 }
 
-void MicroBox::cmdParser()
+void MicroBox::commandParser()
 {
     while (portHandler->available()) {
         uint8_t ch;
         ch = portHandler->read();
 
-        if (HandleEscSeq(ch))
+        if (handleEscapeSequence(ch))
             continue;
 
         if (ch == 0x7F || ch == 0x08) {
-            if (bufPos > 0) {
-                bufPos--;
-                cmdBuf[bufPos] = 0;
+            if (bufferPosition > 0) {
+                bufferPosition--;
+                commandBuffer[bufferPosition] = 0;
                 portHandler->write(ch);
                 printf(" \x1B[1D");
             } else {
                 printf("\a");
             }
         } else if (ch == '\t') {
-            HandleTab();
-        } else if (ch != '\r' && bufPos < (MAX_CMD_BUF_SIZE - 1)) {
+            handleTab();
+        } else if (ch != '\r' && bufferPosition < (MAX_COMMAND_BUFFER_SIZE - 1)) {
             if (ch != '\n') {
-                if (locEcho)
+                if (localEcho)
                     portHandler->write(ch);
-                cmdBuf[bufPos++] = ch;
-                cmdBuf[bufPos] = 0;
+                commandBuffer[bufferPosition++] = ch;
+                commandBuffer[bufferPosition] = 0;
             }
         } else {
-            ExecCommand();
+            executeCommand();
         }
     }
 }
 
-bool MicroBox::HandleEscSeq(unsigned char ch)
+bool MicroBox::handleEscapeSequence(unsigned char ch)
 {
     bool ret = false;
 
     if (ch == 27) {
-        escSeq = ESC_STATE_START;
+        escapeSequence = ESCAPE_STATE_START;
         ret = true;
-    } else if (escSeq == ESC_STATE_START) {
+    } else if (escapeSequence == ESCAPE_STATE_START) {
         if (ch == 0x5B) {
-            escSeq = ESC_STATE_CODE;
+            escapeSequence = ESCAPE_STATE_CODE;
             ret = true;
         } else
-            escSeq = ESC_STATE_NONE;
-    } else if (escSeq == ESC_STATE_CODE) {
+            escapeSequence = ESCAPE_STATE_NONE;
+    } else if (escapeSequence == ESCAPE_STATE_CODE) {
         if (ch == 0x41) // Cursor Up
         {
-            HistoryUp();
+            historyUp();
         } else if (ch == 0x42) // Cursor Down
         {
-            HistoryDown();
+            historyDown();
         } else if (ch == 0x43) // Cursor Right
         {
         } else if (ch == 0x44) // Cursor Left
         {
         }
-        escSeq = ESC_STATE_NONE;
+        escapeSequence = ESCAPE_STATE_NONE;
         ret = true;
     }
     return ret;
 }
 
-uint8_t MicroBox::ParCmp(uint8_t idx1, uint8_t idx2, bool cmd)
+uint8_t MicroBox::compareParameter(uint8_t idx1, uint8_t idx2)
 {
     uint8_t i = 0;
 
-    const char* pName1;
-    const char* pName2;
-
-    if (cmd) {
-        pName1 = Cmds[idx1].cmdName;
-        pName2 = Cmds[idx2].cmdName;
-    } else {
-        pName1 = Params[idx1].paramName;
-        pName2 = Params[idx2].paramName;
-    }
+    const char* pName1 = commands[idx1].commandName;
+    const char* pName2 = commands[idx2].commandName;
 
     while (pName1[i] != 0 && pName2[i] != 0) {
         if (pName1[i] != pName2[i])
@@ -232,10 +197,10 @@ uint8_t MicroBox::ParCmp(uint8_t idx1, uint8_t idx2, bool cmd)
     return i;
 }
 
-int8_t MicroBox::GetCmdIdx(char* pCmd, int8_t startIdx)
+int8_t MicroBox::getCommandIndex(char* pCmd, int8_t startIdx)
 {
-    while (Cmds[startIdx].cmdName != NULL) {
-        if (strncmp(Cmds[startIdx].cmdName, pCmd, strlen(pCmd)) == 0) {
+    while (commands[startIdx].commandName != nullptr) {
+        if (strncmp(commands[startIdx].commandName, pCmd, strlen(pCmd)) == 0) {
             return startIdx;
         }
         startIdx++;
@@ -243,37 +208,37 @@ int8_t MicroBox::GetCmdIdx(char* pCmd, int8_t startIdx)
     return -1;
 }
 
-void MicroBox::HandleTab()
+void MicroBox::handleTab()
 {
     int8_t idx, idx2;
-    char* pParam = NULL;
+    char* pParam = nullptr;
     uint8_t i, len = 0;
     uint8_t parlen, matchlen, inlen;
 
-    for (i = 0; i < bufPos; i++) {
-        if (cmdBuf[i] == ' ')
-            pParam = cmdBuf + i;
+    for (i = 0; i < bufferPosition; i++) {
+        if (commandBuffer[i] == ' ')
+            pParam = commandBuffer + i;
     }
 
-    if (bufPos && pParam == NULL) {
-        pParam = cmdBuf;
+    if (bufferPosition && pParam == nullptr) {
+        pParam = commandBuffer;
 
-        idx = GetCmdIdx(pParam);
+        idx = getCommandIndex(pParam);
         if (idx >= 0) {
-            parlen = strlen(Cmds[idx].cmdName);
+            parlen = strlen(commands[idx].commandName);
             matchlen = parlen;
             idx2 = idx;
-            while ((idx2 = GetCmdIdx(pParam, idx2 + 1)) != -1) {
-                matchlen = ParCmp(idx, idx2, true);
+            while ((idx2 = getCommandIndex(pParam, idx2 + 1)) != -1) {
+                matchlen = compareParameter(idx, idx2);
                 if (matchlen < parlen)
                     parlen = matchlen;
             }
             inlen = strlen(pParam);
             if (matchlen > inlen) {
                 len = matchlen - inlen;
-                if ((bufPos + len) < MAX_CMD_BUF_SIZE) {
-                    strncat(cmdBuf, Cmds[idx].cmdName + inlen, len);
-                    bufPos += len;
+                if ((bufferPosition + len) < MAX_COMMAND_BUFFER_SIZE) {
+                    strncat(commandBuffer, commands[idx].commandName + inlen, len);
+                    bufferPosition += len;
                 } else
                     len = 0;
             }
@@ -284,75 +249,75 @@ void MicroBox::HandleTab()
     }
 }
 
-void MicroBox::HistoryUp()
+void MicroBox::historyUp()
 {
-    if (historyBufSize == 0 || historyWrPos == 0)
+    if (historyBufferSize == 0 || historyWritePosition == 0)
         return;
 
-    if (historyCursorPos == -1)
-        historyCursorPos = historyWrPos - 2;
+    if (historyCursorPosition == -1)
+        historyCursorPosition = historyWritePosition - 2;
 
-    while (historyBuf[historyCursorPos] != 0 && historyCursorPos > 0) {
-        historyCursorPos--;
+    while (historyBuffer[historyCursorPosition] != 0 && historyCursorPosition > 0) {
+        historyCursorPosition--;
     }
-    if (historyCursorPos > 0)
-        historyCursorPos++;
+    if (historyCursorPosition > 0)
+        historyCursorPosition++;
 
-    strcpy(cmdBuf, historyBuf + historyCursorPos);
-    HistoryPrintHlpr();
-    if (historyCursorPos > 1)
-        historyCursorPos -= 2;
+    strcpy(commandBuffer, historyBuffer + historyCursorPosition);
+    historyPrintHelper();
+    if (historyCursorPosition > 1)
+        historyCursorPosition -= 2;
 }
 
-void MicroBox::HistoryDown()
+void MicroBox::historyDown()
 {
     int pos;
-    if (historyCursorPos != -1 && historyCursorPos != historyWrPos - 2) {
-        pos = historyCursorPos + 2;
-        pos += strlen(historyBuf + pos) + 1;
+    if (historyCursorPosition != -1 && historyCursorPosition != historyWritePosition - 2) {
+        pos = historyCursorPosition + 2;
+        pos += strlen(historyBuffer + pos) + 1;
 
-        strcpy(cmdBuf, historyBuf + pos);
-        HistoryPrintHlpr();
-        historyCursorPos = pos - 2;
+        strcpy(commandBuffer, historyBuffer + pos);
+        historyPrintHelper();
+        historyCursorPosition = pos - 2;
     }
 }
 
-void MicroBox::HistoryPrintHlpr()
+void MicroBox::historyPrintHelper()
 {
     uint8_t i;
     uint8_t len;
 
-    len = strlen(cmdBuf);
-    for (i = 0; i < bufPos; i++)
+    len = strlen(commandBuffer);
+    for (i = 0; i < bufferPosition; i++)
         printf("\b");
-    printf("%s", cmdBuf);
-    if (len < bufPos) {
+    printf("%s", commandBuffer);
+    if (len < bufferPosition) {
         printf("\x1B[K");
     }
-    bufPos = len;
+    bufferPosition = len;
 }
 
-void MicroBox::AddToHistory(char* buf)
+void MicroBox::addToHistory(char* buf)
 {
     uint8_t len;
     int blockStart = 0;
 
     len = strlen(buf);
-    if (historyBufSize > 0) {
-        if (historyWrPos + len + 1 >= historyBufSize) {
-            while (historyWrPos + len - blockStart >= historyBufSize) {
-                blockStart += strlen(historyBuf + blockStart) + 1;
+    if (historyBufferSize > 0) {
+        if (historyWritePosition + len + 1 >= historyBufferSize) {
+            while (historyWritePosition + len - blockStart >= historyBufferSize) {
+                blockStart += strlen(historyBuffer + blockStart) + 1;
             }
-            memmove(historyBuf, historyBuf + blockStart, historyWrPos - blockStart);
-            historyWrPos -= blockStart;
+            memmove(historyBuffer, historyBuffer + blockStart, historyWritePosition - blockStart);
+            historyWritePosition -= blockStart;
         }
-        strcpy(historyBuf + historyWrPos, buf);
-        historyWrPos += len + 1;
-        historyBuf[historyWrPos] = 0;
+        strcpy(historyBuffer + historyWritePosition, buf);
+        historyWritePosition += len + 1;
+        historyBuffer[historyWritePosition] = 0;
     }
 }
 
-void MicroBox::ErrorCmd()
+void MicroBox::errorCommand()
 {
     printf("Command not found. Use \"help\" or \"help <cmd>\" for details.\n\r");
 }
@@ -397,14 +362,14 @@ void MicroBox::showHelp(char** pParam, uint8_t parCnt)
 {
     if (parCnt == 0) {
         printf("List of available commands:\n\r\n\r");
-        PrintCommands();
+        printCommands();
         printf("\n\rTo get detailed information about <cmd>, type \"help <cmd>\".\n\r");
     } else {
         char* cmdName = pParam[0];
         uint8_t i = 0;
-        while (Cmds[i].cmdName != NULL) {
-            if (!strcmp(Cmds[i].cmdName, cmdName)) {
-                printf("%s", Cmds[i].cmdDesc);
+        while (commands[i].commandName != nullptr) {
+            if (!strcmp(commands[i].commandName, cmdName)) {
+                printf("%s", commands[i].commandDescription);
                 return;
             }
             ++i;
@@ -414,11 +379,11 @@ void MicroBox::showHelp(char** pParam, uint8_t parCnt)
     }
 }
 
-void MicroBox::PrintCommands()
+void MicroBox::printCommands()
 {
     uint8_t index = 0;
-    while (Cmds[index].cmdName != NULL) {
-        printf("%s\n\r", Cmds[index].cmdName);
+    while (commands[index].commandName != nullptr) {
+        printf("%s\n\r", commands[index].commandName);
         index++;
     }
 }
