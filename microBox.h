@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <functional>
 
 #define MAX_CMD_NUM 20
 #define MAX_HISTORY_BUFFER_SIZE 1000
@@ -26,11 +27,17 @@
 #define ESC_STATE_START 1
 #define ESC_STATE_CODE 2
 
+#define PRINTF_BUF 256
+
+typedef std::function<void (char** param, uint8_t parCnt)> callback_t;
+
+class PortHandler;
+
 typedef struct
 {
     const char* cmdName;
     const char *cmdDesc;
-    void (*cmdFunc)(char** param, uint8_t parCnt);
+    callback_t cmdFunc;
 } CMD_ENTRY;
 
 typedef struct
@@ -44,18 +51,19 @@ typedef struct
     uint8_t id;
 } PARAM_ENTRY;
 
-class microBox {
+class MicroBox {
 public:
-    microBox();
-    ~microBox();
-    void begin(const char* hostName, bool showPrompt = true, bool localEcho = true, PARAM_ENTRY* pParams = NULL);
+    MicroBox();
+    ~MicroBox();
+    void begin(const char* hostName, PortHandler* portHandler, bool showPrompt = true, bool localEcho = true, PARAM_ENTRY* pParams = NULL);
     void cmdParser();
-    bool AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc);
+    bool AddCommand(const char* cmdName, callback_t cmdFunc, const char* cmdDesc);
+    void printf(const char* format, ...);
     void ShowPrompt();
 
 private:
-    static void showHelp(char** pParam, uint8_t parCnt);
-    static void PrintCommands();
+    void showHelp(char** pParam, uint8_t parCnt);
+    void PrintCommands();
 
 private:
     uint8_t ParseCmdParams(char* pParam);
@@ -76,21 +84,20 @@ private:
     char dirBuf[15];
     char* ParmPtr[10];
     uint8_t bufPos;
-    bool csvMode;
     uint8_t escSeq;
     unsigned long watchTimeout;
     const char* machName;
-    int historyBufSize;
+    int historyBufSize = {0};
     int historyWrPos;
     int historyCursorPos;
     bool locEcho;
 
-    static CMD_ENTRY Cmds[MAX_CMD_NUM];
+    CMD_ENTRY Cmds[MAX_CMD_NUM] = {0};
     PARAM_ENTRY* Params;
 
-    static char historyBuf[MAX_HISTORY_BUFFER_SIZE];
-};
+    char historyBuf[MAX_HISTORY_BUFFER_SIZE];
 
-extern microBox microbox;
+    PortHandler* portHandler = nullptr;
+};
 
 #endif

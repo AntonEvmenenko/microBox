@@ -6,21 +6,14 @@
 */
 
 #include "microBox.h"
-#include "microBox_platform.h"
 
-microBox microbox;
+#include "port_handler.h"
+#include <printf/printf.h>
+#undef printf
 
-CMD_ENTRY microBox::Cmds[] = {
-    { "help", "Prints help.\n\r", microBox::showHelp},
-    { NULL, NULL, NULL }
-};
-
-char microBox::historyBuf[MAX_HISTORY_BUFFER_SIZE];
-
-microBox::microBox()
+MicroBox::MicroBox()
 {
     bufPos = 0;
-    csvMode = false;
     locEcho = false;
     watchTimeout = 0;
     escSeq = 0;
@@ -29,26 +22,31 @@ microBox::microBox()
     historyCursorPos = -1;
 }
 
-microBox::~microBox()
+MicroBox::~MicroBox()
 {
 }
 
-void microBox::begin(const char* hostName, bool showPrompt, bool localEcho, PARAM_ENTRY* pParams)
+void MicroBox::begin(const char* hostName, PortHandler* portHandler, bool showPrompt, bool localEcho, PARAM_ENTRY* pParams)
 {
+    this->portHandler = portHandler;
+
+    Cmds[0].cmdName = "help";
+    Cmds[0].cmdDesc = "Prints help.\n\r";
+    Cmds[0].cmdFunc = std::bind(&MicroBox::showHelp, this, std::placeholders::_1, std::placeholders::_2);
+
     historyBufSize = MAX_HISTORY_BUFFER_SIZE;
-    historyBuf[0] = 0;
-    historyBuf[1] = 0;
 
     locEcho = localEcho;
     Params = pParams;
     machName = hostName;
     ParmPtr[0] = NULL;
+
     if (showPrompt) {
         ShowPrompt();
     }
 }
 
-bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uint8_t parCnt), const char* cmdDesc)
+bool MicroBox::AddCommand(const char* cmdName, callback_t cmdFunc, const char* cmdDesc)
 {
     uint8_t idx = 0;
 
@@ -68,13 +66,28 @@ bool microBox::AddCommand(const char* cmdName, void (*cmdFunc)(char** param, uin
     return false;
 }
 
-void microBox::ShowPrompt()
+// from https://playground.arduino.cc/Main/Printf/
+void MicroBox::printf(const char* format, ...)
 {
-    SerialPrint(machName);
-    SerialPrint("> ");
+    char buf[PRINTF_BUF];
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, sizeof(buf), format, ap);
+    for (char* p = &buf[0]; *p; p++) // emulate cooked mode for newlines
+    {
+        if (*p == '\n')
+            portHandler->write('\r');
+        portHandler->write(*p);
+    }
+    va_end(ap);
 }
 
-uint8_t microBox::ParseCmdParams(char* pParam)
+void MicroBox::ShowPrompt()
+{
+    printf("%s>", machName);
+}
+
+uint8_t MicroBox::ParseCmdParams(char* pParam)
 {
     uint8_t idx = 0;
 
@@ -90,10 +103,10 @@ uint8_t microBox::ParseCmdParams(char* pParam)
     return idx;
 }
 
-void microBox::ExecCommand()
+void MicroBox::ExecCommand()
 {
     bool found = false;
-    SerialPrint("\n\r");
+    printf("\n\r");
     if (bufPos > 0) {
         uint8_t i = 0;
         uint8_t dstlen;
@@ -115,7 +128,7 @@ void microBox::ExecCommand()
             dstlen = strlen(Cmds[i].cmdName);
             if (dstlen == srclen) {
                 if (strncmp(cmdBuf, Cmds[i].cmdName, dstlen) == 0) {
-                    (*Cmds[i].cmdFunc)(ParmPtr, ParseCmdParams(pParam));
+                    (Cmds[i].cmdFunc)(ParmPtr, ParseCmdParams(pParam));
                     found = true;
                     bufPos = 0;
                     ShowPrompt();
@@ -132,11 +145,11 @@ void microBox::ExecCommand()
         ShowPrompt();
 }
 
-void microBox::cmdParser()
+void MicroBox::cmdParser()
 {
-    while (SerialAvailable()) {
+    while (portHandler->available()) {
         uint8_t ch;
-        ch = SerialRead();
+        ch = portHandler->read();
 
         if (HandleEscSeq(ch))
             continue;
@@ -145,17 +158,17 @@ void microBox::cmdParser()
             if (bufPos > 0) {
                 bufPos--;
                 cmdBuf[bufPos] = 0;
-                SerialWrite(ch);
-                SerialPrint(" \x1B[1D");
+                portHandler->write(ch);
+                printf(" \x1B[1D");
             } else {
-                SerialPrint("\a");
+                printf("\a");
             }
         } else if (ch == '\t') {
             HandleTab();
         } else if (ch != '\r' && bufPos < (MAX_CMD_BUF_SIZE - 1)) {
             if (ch != '\n') {
                 if (locEcho)
-                    SerialWrite(ch);
+                    portHandler->write(ch);
                 cmdBuf[bufPos++] = ch;
                 cmdBuf[bufPos] = 0;
             }
@@ -165,7 +178,7 @@ void microBox::cmdParser()
     }
 }
 
-bool microBox::HandleEscSeq(unsigned char ch)
+bool MicroBox::HandleEscSeq(unsigned char ch)
 {
     bool ret = false;
 
@@ -196,7 +209,7 @@ bool microBox::HandleEscSeq(unsigned char ch)
     return ret;
 }
 
-uint8_t microBox::ParCmp(uint8_t idx1, uint8_t idx2, bool cmd)
+uint8_t MicroBox::ParCmp(uint8_t idx1, uint8_t idx2, bool cmd)
 {
     uint8_t i = 0;
 
@@ -219,7 +232,7 @@ uint8_t microBox::ParCmp(uint8_t idx1, uint8_t idx2, bool cmd)
     return i;
 }
 
-int8_t microBox::GetCmdIdx(char* pCmd, int8_t startIdx)
+int8_t MicroBox::GetCmdIdx(char* pCmd, int8_t startIdx)
 {
     while (Cmds[startIdx].cmdName != NULL) {
         if (strncmp(Cmds[startIdx].cmdName, pCmd, strlen(pCmd)) == 0) {
@@ -230,7 +243,7 @@ int8_t microBox::GetCmdIdx(char* pCmd, int8_t startIdx)
     return -1;
 }
 
-void microBox::HandleTab()
+void MicroBox::HandleTab()
 {
     int8_t idx, idx2;
     char* pParam = NULL;
@@ -267,11 +280,11 @@ void microBox::HandleTab()
         }
     }
     if (len > 0) {
-        SerialPrint(pParam + inlen);
+        printf("%s", pParam + inlen);
     }
 }
 
-void microBox::HistoryUp()
+void MicroBox::HistoryUp()
 {
     if (historyBufSize == 0 || historyWrPos == 0)
         return;
@@ -291,7 +304,7 @@ void microBox::HistoryUp()
         historyCursorPos -= 2;
 }
 
-void microBox::HistoryDown()
+void MicroBox::HistoryDown()
 {
     int pos;
     if (historyCursorPos != -1 && historyCursorPos != historyWrPos - 2) {
@@ -304,22 +317,22 @@ void microBox::HistoryDown()
     }
 }
 
-void microBox::HistoryPrintHlpr()
+void MicroBox::HistoryPrintHlpr()
 {
     uint8_t i;
     uint8_t len;
 
     len = strlen(cmdBuf);
     for (i = 0; i < bufPos; i++)
-        SerialPrint("\b");
-    SerialPrint(cmdBuf);
+        printf("\b");
+    printf("%s", cmdBuf);
     if (len < bufPos) {
-        SerialPrint("\x1B[K");
+        printf("\x1B[K");
     }
     bufPos = len;
 }
 
-void microBox::AddToHistory(char* buf)
+void MicroBox::AddToHistory(char* buf)
 {
     uint8_t len;
     int blockStart = 0;
@@ -339,13 +352,13 @@ void microBox::AddToHistory(char* buf)
     }
 }
 
-void microBox::ErrorCmd()
+void MicroBox::ErrorCmd()
 {
-    SerialPrint("Command not found. Use \"help\" or \"help <cmd>\" for details.\n\r");
+    printf("Command not found. Use \"help\" or \"help <cmd>\" for details.\n\r");
 }
 
 // Taken from Stream.cpp
-double microBox::parseFloat(char* pBuf)
+double MicroBox::parseFloat(char* pBuf)
 {
     bool isNegative = false;
     bool isFraction = false;
@@ -380,37 +393,32 @@ double microBox::parseFloat(char* pBuf)
         return value;
 }
 
-void microBox::showHelp(char** pParam, uint8_t parCnt)
+void MicroBox::showHelp(char** pParam, uint8_t parCnt)
 {
     if (parCnt == 0) {
-        SerialPrint("List of available commands:\n\r");
-        SerialPrint("\n\r");
+        printf("List of available commands:\n\r\n\r");
         PrintCommands();
-        SerialPrint("\n\r");
-        SerialPrint("To get detailed information about <cmd>, type \"help <cmd>\".\n\r");
+        printf("\n\rTo get detailed information about <cmd>, type \"help <cmd>\".\n\r");
     } else {
         char* cmdName = pParam[0];
         uint8_t i = 0;
         while (Cmds[i].cmdName != NULL) {
             if (!strcmp(Cmds[i].cmdName, cmdName)) {
-                SerialPrint(Cmds[i].cmdDesc);
+                printf("%s", Cmds[i].cmdDesc);
                 return;
             }
             ++i;
         }
 
-        SerialPrint("ERROR: Command ");
-        SerialPrint(cmdName);
-        SerialPrint(" not found.\n\r");
+        printf("ERROR: Command %s not found.\n\r", cmdName);
     }
 }
 
-void microBox::PrintCommands()
+void MicroBox::PrintCommands()
 {
     uint8_t index = 0;
     while (Cmds[index].cmdName != NULL) {
-        SerialPrint(Cmds[index].cmdName);
-        SerialPrint("\n\r");
+        printf("%s\n\r", Cmds[index].cmdName);
         index++;
     }
 }
