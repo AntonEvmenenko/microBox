@@ -11,7 +11,7 @@ microBox is an library that provides a command line interface with Linux Shell l
 * Autocompletion(Tab)
 * User commands
 * Int, Double and String datatypes supported for parameters
-* Could be ported to any platform (you need to add the description for your platform to the `platform` folder)
+* Any duplex communication interface could be used (you need to add the description of your interface to the `port_handlers` folder)
 
 ## How to use
 
