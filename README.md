@@ -15,28 +15,31 @@ microBox is an library that provides a command line interface with Linux Shell l
 
 ## How to use
 
-1. Add platform definition.
+1. Add port handler.
 
-The library needs to know which interface to use and how to control it. To add new platform definition, you need to implement all the functions described in [microBox_platform.h](https://github.com/AntonEvmenenko/microBox/blob/develop/microBox_platform.h). Some examples [are available](https://github.com/AntonEvmenenko/microBox/tree/develop/platforms).
+The library needs to know which port to use and how to control it. To add new port handler, you need to create a class derived from `PortHandler` ([port_handler.h](https://github.com/AntonEvmenenko/microBox/blob/develop/port_handler.h)). Some examples [are available](https://github.com/AntonEvmenenko/microBox/tree/develop/port_handlers).
 
-2. Initialize microBox object.
+2. Initialize your port. Create microBox object, initialize it too.
 
 ```cpp
-char hostname[] = "myhostname";`
-microbox.begin(hostname);
+
+    MicroBox microbox;
+    ...
+    portHandler.begin(115200);
+    microbox.begin("hostname", &portHandler);
 ```
 
 3. Add your CLI commands.
 
 ```cpp
-microbox.AddCommand("sum", [](char** param, uint8_t parCnt){
+microbox.addCommand("sum", [](char** param, uint8_t parCnt){
     if (parCnt == 2) {
         int a = atoi(param[0]);
         int b = atoi(param[1]);
         int c = a + b;
-        SerialPrint(c);
+        microbox.printf("%d", c);
     } else {
-        SerialPrint("ERROR: check \"help <cmd>\" for the detailed information\n\r");
+        microbox.printf("ERROR: check \"help <cmd>\" for the detailed information\n\r");
     }
 }, 
 "DESCRIPTION:\n\r"
@@ -49,4 +52,4 @@ microbox.AddCommand("sum", [](char** param, uint8_t parCnt){
 );
 ```
 
-4. Сall `microbox.cmdParser()` periodically.
+4. Сall `microbox.commandParser()` periodically.
