@@ -12,7 +12,10 @@
 #include <string.h>
 
 #define MAX_CMD_NUM 20
+
+#ifndef MAX_HISTORY_BUFFER_SIZE
 #define MAX_HISTORY_BUFFER_SIZE 1000
+#endif
 
 #define MAX_CMD_BUF_SIZE 40
 
